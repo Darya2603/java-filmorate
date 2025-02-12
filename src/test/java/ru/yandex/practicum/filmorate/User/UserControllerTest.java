@@ -107,7 +107,9 @@ public class UserControllerTest {
                 .andExpect(jsonPath("$.email").value("updated@example.com"))
                 .andExpect(jsonPath("$.login").value("updateduser"))
                 .andExpect(jsonPath("$.name").value("Updated User"));
-    }    @Test
+    }
+
+    @Test
     public void getUsers_ReturnsListOfUsers() throws Exception {
         User user1 = new User();
         user1.setId(1);
