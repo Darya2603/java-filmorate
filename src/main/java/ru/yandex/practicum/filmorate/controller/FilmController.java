@@ -7,9 +7,11 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.http.ResponseEntity;
 import java.util.ArrayList;
 import java.util.List;
+
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import java.util.*;
+
 
 @Slf4j
 @RestController
@@ -17,11 +19,14 @@ import java.util.*;
 public class FilmController {
 
     private final HashMap<Integer, Film> films = new HashMap<>();
+    private int currentId = 0;
 
     @PostMapping
     public ResponseEntity<Film> addFilm(@Valid @RequestBody Film film) {
         int newId = films.size() + 1;
         film.setId(newId);
+        currentId++;
+        film.setId(currentId);
         if (films.containsKey(film.getId())) {
             log.warn("Фильм с id {} уже существует", film.getId());
             return ResponseEntity.status(HttpStatus.CONFLICT).build();
@@ -52,5 +57,6 @@ public class FilmController {
         return new ArrayList<>(films.values());
     }
 }
+
 
 

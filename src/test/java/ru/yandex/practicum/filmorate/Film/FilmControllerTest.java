@@ -27,19 +27,19 @@ public class FilmControllerTest {
     @Test
     public void addFilmValidFilmReturnsCreated() throws Exception {
         Film film = new Film();
-        film.setId(1);
         film.setName("Valid Film");
         film.setDescription("This is a valid description.");
         film.setReleaseDate(LocalDate.now());
         film.setDuration(120);
+
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
         String filmJson = objectMapper.writeValueAsString(film);
-
         mockMvc.perform(post("/films")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(filmJson))
                 .andExpect(status().isCreated());
+
     }
 
     @Test

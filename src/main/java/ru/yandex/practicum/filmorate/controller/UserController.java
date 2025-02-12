@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.*;
 
+import ru.yandex.practicum.filmorate.exception.DataAlreadyExistException;
 import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
 
@@ -19,19 +20,24 @@ import ru.yandex.practicum.filmorate.model.User;
 public class UserController {
 
     private final HashMap<Integer, User> users = new HashMap<>();
+    private final Set<String> emailUniqSet = new HashSet<>(); // Набор уникальных электронных адресов
+    private int counter = 0;
 
     @PostMapping
     public ResponseEntity<User> addUser(@Valid @RequestBody User user) {
-        int newId = users.size() + 1;
-        user.setId(newId);
-        if (user.getName() == null || user.getName().isEmpty()) {
+        String email = user.getEmail();
+        if (emailUniqSet.contains(email)) {
+            throw new DataAlreadyExistException("Email: " + email + " уже существует");
+        }
+
+        if (user.getName() == null || user.getName().trim().isEmpty()) {
             user.setName(user.getLogin());
         }
-        if (users.containsKey(user.getId())) {
-            log.warn("Пользователь с id {} уже существует", user.getId());
-            return ResponseEntity.status(HttpStatus.CONFLICT).build();
-        }
+
+        user.setId(++counter);
         users.put(user.getId(), user);
+        emailUniqSet.add(email);
+
         log.info("Добавлен пользователь: {}", user);
         return new ResponseEntity<>(user, HttpStatus.CREATED);
     }
