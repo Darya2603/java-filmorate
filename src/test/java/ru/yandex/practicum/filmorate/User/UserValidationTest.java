@@ -20,13 +20,12 @@ public class UserValidationTest {
 
     @BeforeEach
     public void setUp() {
-        try (ValidatorFactory factory = Validation.buildDefaultValidatorFactory()) {
-            validator = factory.getValidator();
-        }
+        ValidatorFactory factory = Validation.buildDefaultValidatorFactory();
+        validator = factory.getValidator();
     }
 
     @Test
-    public void userWithEmptyEmail_ShouldFailValidation() {
+    public void userWithEmptyEmailShouldFailValidation() {
         User user = new User();
         user.setEmail("");
         user.setLogin("validLogin");
@@ -38,7 +37,7 @@ public class UserValidationTest {
     }
 
     @Test
-    public void userWithInvalidEmail_ShouldFailValidation() {
+    public void userWithInvalidEmailShouldFailValidation() {
         User user = new User();
         user.setEmail("invalidEmail");
         user.setLogin("validLogin");
@@ -50,7 +49,7 @@ public class UserValidationTest {
     }
 
     @Test
-    public void userWithEmptyLogin_ShouldFailValidation() {
+    public void userWithEmptyLoginShouldFailValidation() {
         User user = new User();
         user.setEmail("test@example.com");
         user.setLogin(""); // Пустой логин
