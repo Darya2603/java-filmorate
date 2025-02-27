@@ -2,7 +2,6 @@ package ru.yandex.practicum.filmorate.exception;
 
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
-
 import java.time.LocalDate;
 
 public class ReleaseDateValidator implements ConstraintValidator<ReleaseDate, LocalDate> {
@@ -13,3 +12,5 @@ public class ReleaseDateValidator implements ConstraintValidator<ReleaseDate, Lo
         return releaseDate != null && !releaseDate.isBefore(MIN_DATE) && !releaseDate.isAfter(LocalDate.now());
     }
 }
+
+
