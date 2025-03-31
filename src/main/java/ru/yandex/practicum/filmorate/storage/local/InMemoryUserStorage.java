@@ -1,22 +1,17 @@
-package ru.yandex.practicum.filmorate.storage.user;
+package ru.yandex.practicum.filmorate.storage.local;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import ru.yandex.practicum.filmorate.exception.ConflictException;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.User;
-import java.util.stream.Collectors;
-import java.util.Collections;
-import java.util.Objects;
+import ru.yandex.practicum.filmorate.storage.db.user.UserStorage;
 
-
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
-
+import java.util.*;
 
 @Slf4j
-@Component
+@Component("InMemoryUserStorage")
 public class InMemoryUserStorage implements UserStorage {
     private final HashMap<Integer, User> users = new HashMap<>();
     private int counter = 0;
@@ -33,9 +28,24 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
+    public List<User> addUsers(List<User> users) {
+        List<User> addedUsers = new ArrayList<>();
+        for (User user : users) {
+            user.setId(++counter);
+            if (user.getName() == null || user.getName().isEmpty()) {
+                user.setName(user.getLogin());
+            }
+            this.users.put(user.getId(), user);
+            log.info("Добавлен пользователь: {}", user);
+            addedUsers.add(user);
+        }
+        return addedUsers;
+    }
+
+    @Override
     public User updateUser(User user) {
         if (!users.containsKey(user.getId())) {
-            throw new UserNotFoundException("Пользователь с id " + user.getId() + " не найден");
+            throw new NotFoundException("Пользователь с id " + user.getId() + " не найден");
         }
         for (User existingUser : users.values()) {
             if (existingUser.getId() != user.getId()) {
@@ -55,14 +65,14 @@ public class InMemoryUserStorage implements UserStorage {
     }
 
     @Override
-    public User getUserById(int id) {
+    public Optional<User> getUserById(int id) {
         User user = users.get(id);
         if (user == null) {
             log.warn("Пользователь с id {} не найден", id);
-            return null;
+            return Optional.empty();
         } else {
             log.info("Получен пользователь: {}", user);
-            return user;
+            return Optional.of(user);
         }
     }
 
@@ -77,22 +87,12 @@ public class InMemoryUserStorage implements UserStorage {
             log.info("Пользователь с id {} был удален", id);
         } else {
             log.warn("Попытка удалить несуществующего пользователя с id {}", id);
+            throw new NotFoundException("Пользователь с id " + id + " не найден");
         }
     }
 
     @Override
-    public List<User> getFriendsByUserId(int userId) {
-        User user = getUserById(userId);
-        if (user == null) {
-            log.warn("Пользователь с id {} не найден", userId);
-            return Collections.emptyList();
-        }
-        List<User> friendsList = user.getFriends().stream()
-                .map(this::getUserById)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toList());
-
-        log.info("Получены друзья пользователя с id {}: {}", userId, friendsList);
-        return friendsList;
+    public boolean userExists(Integer userId) {
+        return users.containsKey(userId);
     }
 }

@@ -6,15 +6,11 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
-@NoArgsConstructor
 @AllArgsConstructor
-public class Genre {
+@NoArgsConstructor
+public class Like {
     @NotNull
-    private Integer id;
+    private int filmId;
     @NotNull
-    private String name;
-
-    public Genre(Integer id) {
-        this.id = id;
-    }
+    private int userId;
 }

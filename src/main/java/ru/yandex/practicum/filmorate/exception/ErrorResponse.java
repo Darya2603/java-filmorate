@@ -15,16 +15,7 @@ public class ErrorResponse {
         this.fieldErrors = new HashMap<>();
     }
 
-    public ErrorResponse(String message, Map<String, String> fieldErrors) {
-        this.message = message;
-        this.fieldErrors = fieldErrors != null ? fieldErrors : new HashMap<>();
-    }
-
     public void addFieldError(String field, String error) {
         this.fieldErrors.put(field, error);
-    }
-
-    public boolean hasFieldErrors() {
-        return !fieldErrors.isEmpty();
     }
 }
