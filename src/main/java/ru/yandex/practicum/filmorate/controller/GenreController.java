@@ -10,7 +10,6 @@ import ru.yandex.practicum.filmorate.service.GenreService;
 
 import java.util.Collection;
 
-
 @RestController
 @RequestMapping("/genres")
 @RequiredArgsConstructor
