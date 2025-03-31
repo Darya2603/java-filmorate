@@ -1,13 +1,18 @@
 package ru.yandex.practicum.filmorate.model;
 
+import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class Friendship {
-    public Friendship(int id, int id1) {
-    }
-
-    public void confirmFriendship() {
-    }
-
-    public Integer getRequesterId() {
-        return null;
-    }
+    @NotNull
+    private int id;
+    @NotNull
+    private int friendId;
+    @NotNull
+    private boolean isFriend;
 }

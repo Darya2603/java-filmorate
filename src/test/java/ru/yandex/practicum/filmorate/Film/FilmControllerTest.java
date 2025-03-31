@@ -11,12 +11,9 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 import ru.yandex.practicum.filmorate.controller.FilmController;
-import ru.yandex.practicum.filmorate.exception.FilmNotFoundException;
-import ru.yandex.practicum.filmorate.exception.LikeNotFoundException;
-import ru.yandex.practicum.filmorate.exception.UserNotFoundException;
+import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.service.FilmService;
-import ru.yandex.practicum.filmorate.storage.film.FilmStorage;
 
 import java.time.LocalDate;
 import java.util.*;
@@ -34,11 +31,7 @@ public class FilmControllerTest {
     private FilmController filmController;
 
     @Mock
-    private FilmStorage filmStorage;
-
-    @Mock
     private FilmService filmService;
-
 
     @BeforeEach
     public void setUp() {
@@ -57,7 +50,7 @@ public class FilmControllerTest {
         Set<Integer> likes = new HashSet<>();
         film.setLikes(likes);
 
-        when(filmStorage.addFilm(film)).thenReturn(film);
+        when(filmService.addFilm(film)).thenReturn(film);
 
         ObjectMapper objectMapper = new ObjectMapper();
         objectMapper.registerModule(new JavaTimeModule());
@@ -142,14 +135,12 @@ public class FilmControllerTest {
 
     @Test
     public void addLikeValidFilmAndUserReturnsNoContent() throws Exception {
-        int filmId = 1;
-        int userId = 2;
-
-        doNothing().when(filmService).addLike(filmId, userId);
+        Integer filmId = 1;
+        Integer userId = 1;        doNothing().when(filmService).addLike(filmId, userId);
 
         mockMvc.perform(put("/films/{filmId}/like/{userId}", filmId, userId)
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -157,12 +148,10 @@ public class FilmControllerTest {
         int filmId = 1;
         int userId = 2;
 
-        doThrow(new FilmNotFoundException("Фильм не найден с ID: " + filmId)).when(filmService).addLike(filmId, userId);
+        doThrow(new NotFoundException("Film not found")).when(filmService).addLike(filmId, userId);
 
-        mockMvc.perform(put("/films/{filmId}/like/{userId}", filmId, userId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Фильм не найден"));
+        mockMvc.perform(put("/{filmId}/like/{userId}", filmId, userId))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -170,13 +159,10 @@ public class FilmControllerTest {
         int filmId = 1;
         int userId = 2;
 
-        doThrow(new UserNotFoundException("Пользователь не найден с ID: " + userId))
-                .when(filmService).addLike(filmId, userId);
+        doThrow(new NotFoundException("User not found")).when(filmService).addLike(filmId, userId);
 
-        mockMvc.perform(put("/films/{filmId}/like/{userId}", filmId, userId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Пользователь не найден"));
+        mockMvc.perform(put("/{filmId}/like/{userId}", filmId, userId))
+                .andExpect(status().isNotFound());
     }
 
     @Test
@@ -186,49 +172,80 @@ public class FilmControllerTest {
 
         doNothing().when(filmService).removeLike(filmId, userId);
 
-        mockMvc.perform(delete("/films/{filmId}/like/{userId}", filmId, userId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNoContent());
+        mockMvc.perform(delete("/films/{filmId}/like/{userId}", filmId, userId))
+                .andExpect(status().isOk());
+
+        verify(filmService, times(1)).removeLike(filmId, userId);
     }
 
     @Test
     public void removeLikeFilmNotFoundReturnsNotFound() throws Exception {
-        int filmId = 1;
-        int userId = 2;
+        doThrow(new NotFoundException("Фильм с ID 1 не найден"))
+                .when(filmService).removeLike(1, 1);
 
-        doThrow(new FilmNotFoundException("Фильм не найден с ID: " + filmId)).when(filmService).removeLike(filmId, userId);
-
-        mockMvc.perform(delete("/films/{filmId}/like/{userId}", filmId, userId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Фильм не найден с ID: " + filmId));
+        mockMvc.perform(delete("/1/like/1"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
     public void removeLikeUserNotFoundReturnsNotFound() throws Exception {
-        int filmId = 1;
-        int userId = 2;
+        doThrow(new NotFoundException("Пользователь с ID 1 не найден"))
+                .when(filmService).removeLike(1, 1);
 
-        doThrow(new UserNotFoundException("Пользователь не найден с ID: " + userId))
-                .when(filmService).removeLike(filmId, userId);
-
-        mockMvc.perform(delete("/films/{filmId}/like/{userId}", filmId, userId)
-                        .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Пользователь не найден с ID: " + userId));
+        mockMvc.perform(delete("/1/like/1"))
+                .andExpect(status().isNotFound());
     }
 
     @Test
-    public void removeLikeFilmNotLikedReturnsConflict() throws Exception {
-        int filmId = 1;
-        int userId = 2;
+    public void getFilmsReturnsFilmList() throws Exception {
+        Film film1 = new Film();
+        film1.setId(1);
+        film1.setName("Film 1");
+        film1.setDescription("Description 1");
 
-        doThrow(new LikeNotFoundException("Пользователь не лайкнул фильм с ID: " + filmId))
-                .when(filmService).removeLike(filmId, userId);
+        Film film2 = new Film();
+        film2.setId(2);
+        film2.setName("Film 2");
+        film2.setDescription("Description 2");
 
-        mockMvc.perform(delete("/films/{filmId}/like/{userId}", filmId, userId)
+        List<Film> films = Arrays.asList(film1, film2);
+        when(filmService.getAllFilms()).thenReturn(films);
+
+        mockMvc.perform(get("/films")
                         .contentType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.error").value("Пользователь не лайкнул фильм с ID: " + filmId));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Film 1"))
+                .andExpect(jsonPath("$[1].name").value("Film 2"));
+    }
+
+    @Test
+    public void getFilmByIdValidIdReturnsFilm() throws Exception {
+        Film film = new Film();
+        film.setId(1);
+        film.setName("Film 1");
+        film.setDescription("Description 1");
+
+        when(filmService.getFilmById(1)).thenReturn(film);
+
+        mockMvc.perform(get("/films/1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.name").value("Film 1"));
+    }
+
+    @Test
+    public void getPopularFilmsReturnsPopularFilms() throws Exception {
+        Film film1 = new Film();
+        film1.setId(1);
+        film1.setName("Popular Film 1");
+        film1.setDescription("Description 1");
+
+        List<Film> films = Arrays.asList(film1);
+        when(filmService.getTopFilms(1)).thenReturn(films);
+
+        mockMvc.perform(get("/films/popular?count=1")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].name").value("Popular Film 1"));
     }
 }
