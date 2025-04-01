@@ -19,8 +19,6 @@ import ru.yandex.practicum.filmorate.storage.mapper.GenreMapper;
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.*;
-import java.util.Date;
-
 
 @Slf4j
 @Component("FilmDbStorage")
