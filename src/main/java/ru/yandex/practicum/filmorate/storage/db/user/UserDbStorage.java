@@ -110,7 +110,9 @@ public class UserDbStorage implements UserStorage {
         User updatedUser = getUserById(user.getId()).orElseThrow(() -> new NotFoundException("Пользователь не найден"));
         log.info("Обновлен пользователь: {}", updatedUser);
         return updatedUser;
-    }    @Override
+    }
+
+    @Override
     public Optional<User> getUserById(int id) {
         log.debug("Получение пользователя по ID: {}", id);
         try {
