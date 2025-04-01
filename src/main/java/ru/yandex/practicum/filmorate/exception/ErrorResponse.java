@@ -26,5 +26,8 @@ public class ErrorResponse {
 
     public boolean hasFieldErrors() {
         return !fieldErrors.isEmpty();
+      
+    public void addFieldError(String field, String error) {
+        this.fieldErrors.put(field, error);
     }
 }

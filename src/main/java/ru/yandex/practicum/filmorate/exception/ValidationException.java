@@ -25,5 +25,12 @@ public class ValidationException {
     @ExceptionHandler(UserNotFoundException.class)
     public ResponseEntity<String> handleUserNotFound(UserNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ex.getMessage());
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
+public class ValidationException extends IllegalArgumentException {
+    public ValidationException(final String message) {
+        super(message);
+        log.error(message);
     }
 }

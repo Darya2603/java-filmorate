@@ -12,6 +12,10 @@ import ru.yandex.practicum.filmorate.service.UserService;
 import ru.yandex.practicum.filmorate.storage.user.UserStorage;
 import java.util.stream.Collectors;
 
+import org.springframework.web.bind.annotation.*;
+import ru.yandex.practicum.filmorate.model.User;
+import ru.yandex.practicum.filmorate.service.UserService;
+
 import java.util.List;
 import java.util.*;
 
@@ -26,6 +30,11 @@ public class UserController {
     @Autowired
     public UserController(UserStorage userStorage, UserService userService) {
         this.userStorage = userStorage;
+      
+    private final UserService userService;
+
+    @Autowired
+    public UserController(UserService userService) {
         this.userService = userService;
     }
 
@@ -172,5 +181,74 @@ public class UserController {
             response.put("error", "Произошла ошибка при получении общих друзей");
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
+    @ResponseStatus(HttpStatus.CREATED)
+    public User addUser(@Valid @RequestBody User user) {
+        log.info("Получен запрос на создание пользователя: {}", user);
+        return userService.addUser(user);
+    }
+
+    @PostMapping("/batch")
+    @ResponseStatus(HttpStatus.CREATED)
+    public List<User> addUsers(@Valid @RequestBody List<User> users) {
+        log.info("Получен запрос на создание группы пользователей: {}", users);
+
+        List<User> addedUsers = userService.addUsers(users);
+
+        log.info("Успешно добавлены пользователи: {}", addedUsers);
+        return addedUsers;
+    }
+
+    @DeleteMapping("/{userId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void deleteUser(@PathVariable Integer userId) {
+        log.info("Получен запрос на удаление пользователя с ID: {}", userId);
+        userService.deleteUser(userId);
+    }
+
+    @PutMapping
+    public User updateUser(@Valid @RequestBody User updatedUser) {
+        log.info("Получен запрос на обновление пользователя: {}", updatedUser);
+        return userService.updateUser(updatedUser);
+    }
+
+    @GetMapping
+    public List<User> getAllUsers() {
+        log.info("Получен запрос на получение всех пользователей");
+        return userService.getAllUsers();
+    }
+
+    @GetMapping("/{userId}")
+    public Optional<User> getUserById(@PathVariable Integer userId) {
+        log.info("Получен запрос на получение пользователя с ID: {}", userId);
+        return userService.getUserById(userId);
+    }
+
+    @PutMapping("/{userId}/friends/{friendId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    public void addFriend(@PathVariable("userId") Integer userId,
+                          @PathVariable("friendId") Integer friendId) {
+        log.info("Получен запрос на добавление друга: пользователь ID={}, друг ID={}", userId, friendId);
+        userService.addFriend(userId, friendId);
+    }
+
+    @DeleteMapping("/{userId}/friends/{friendId}")
+    @ResponseStatus(HttpStatus.NO_CONTENT) // Убедитесь, что статус 204 возвращается
+    public void removeFriend(@PathVariable("userId") Integer userId,
+                             @PathVariable("friendId") Integer friendId) {
+        log.info("Получен запрос на удаление друга: пользователь ID={}, друг ID={}", userId, friendId);
+        userService.removeFriend(userId, friendId);
+    }
+
+    @GetMapping("/{userId}/friends")
+    public List<User> getFriends(@PathVariable("userId") int userId) {
+        log.info("Получен запрос на получение друзей пользователя с ID: {}", userId);
+        return userService.getFriends(userId);
+    }
+
+    @GetMapping("/{userId1}/friends/common/{userId2}")
+    public List<User> getCommonFriends(@PathVariable("userId1") Integer userId1,
+                                       @PathVariable("userId2") Integer userId2) {
+        log.info("Получен запрос на получение общих друзей: пользователь1 ID={}, пользователь2 ID={}", userId1, userId2);
+        return userService.getCommonFriends(userId1, userId2);
     }
 }
