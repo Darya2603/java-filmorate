@@ -11,43 +11,23 @@ import ru.yandex.practicum.filmorate.exception.EntityNotFoundException;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
 import ru.yandex.practicum.filmorate.model.Genre;
-import ru.yandex.practicum.filmorate.storage.db.genre.GenreDao;
-import ru.yandex.practicum.filmorate.storage.db.mpa.MpaDao;
 import ru.yandex.practicum.filmorate.storage.mapper.FilmMapper;
 import ru.yandex.practicum.filmorate.storage.mapper.GenreMapper;
 
 import java.sql.PreparedStatement;
 import java.sql.Statement;
 import java.util.*;
+import java.sql.Date;
 
 @Slf4j
 @Component("FilmDbStorage")
 @RequiredArgsConstructor
 public class FilmDbStorage implements FilmStorage {
     private final JdbcTemplate jdbcTemplate;
-    private final MpaDao mpaDao;
-    private final GenreDao genreDao;
 
     @Override
     public Film addFilm(Film film) {
         log.debug("createFilm({})", film);
-
-        int mpaId = film.getMpa().getId();
-        if (!mpaDao.isContains(mpaId)) {
-            log.warn("MPA with ID {} wasn't found", mpaId);
-            throw new NotFoundException("MPA with ID " + mpaId + " wasn't found");
-        }
-
-        log.debug("MPA ID is valid: {}", mpaId);
-
-        if (film.getGenres() != null) {
-            for (Genre genre : film.getGenres()) {
-                if (!genreDao.isContains(genre.getId())) {
-                    log.warn("Genre with ID {} wasn't found", genre.getId());
-                    throw new NotFoundException("Genre with ID " + genre.getId() + " wasn't found");
-                }
-            }
-        }
 
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
@@ -56,9 +36,9 @@ public class FilmDbStorage implements FilmStorage {
                     Statement.RETURN_GENERATED_KEYS);
             ps.setString(1, film.getName());
             ps.setString(2, film.getDescription());
-            ps.setDate(3, java.sql.Date.valueOf(film.getReleaseDate()));
+            ps.setDate(3, Date.valueOf(film.getReleaseDate()));
             ps.setInt(4, film.getDuration());
-            ps.setInt(5, mpaId);
+            ps.setInt(5, film.getMpa().getId());
             return ps;
         }, keyHolder);
 
@@ -84,7 +64,7 @@ public class FilmDbStorage implements FilmStorage {
                 "UPDATE films SET name=?, description=?, release_date=?, duration=?, mpa_id=? WHERE film_id=?",
                 film.getName(),
                 film.getDescription(),
-                java.sql.Date.valueOf(film.getReleaseDate()),
+                Date.valueOf(film.getReleaseDate()),
                 film.getDuration(),
                 film.getMpa().getId(),
                 film.getId());
@@ -128,7 +108,9 @@ public class FilmDbStorage implements FilmStorage {
     private void addGenres(int filmId, Set<Genre> genres) {
         log.debug("addGenres({}, {})", filmId, genres);
 
-        Set<Genre> uniqueGenres = new HashSet<>();        for (Genre genre : genres) {
+        Set<Genre> uniqueGenres = new HashSet<>();
+
+        for (Genre genre : genres) {
             if (uniqueGenres.add(genre)) {
                 jdbcTemplate.update("INSERT INTO film_genre (film_id, genre_id) VALUES (?, ?)", filmId, genre.getId());
                 log.trace("Genre {} was added to movie {}", genre.getName(), filmId);
@@ -142,9 +124,7 @@ public class FilmDbStorage implements FilmStorage {
         log.debug("updateGenres({}, {})", filmId, genres);
         deleteGenres(filmId);
         addGenres(filmId, genres);
-    }
-
-    @Override
+    }    @Override
     public Set<Genre> getGenres(int filmId) {
         log.debug("getGenres({})", filmId);
         Set<Genre> genres = new HashSet<>(jdbcTemplate.query(
@@ -153,6 +133,20 @@ public class FilmDbStorage implements FilmStorage {
                 new GenreMapper(), filmId));
         log.trace("Genres for the movie with id {} were returned", filmId);
         return genres;
+    }
+
+    @Override
+    public List<Film> getAllFilmsWithGenres() {
+        log.debug("getAllFilmsWithGenres()");
+        String sql = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, " +
+                "g.genre_id, g.genre_type FROM films AS f " +
+                "LEFT JOIN film_genre AS fg ON f.film_id = fg.film_id " +
+                "LEFT JOIN genre AS g ON fg.genre_id = g.genre_id " +
+                "ORDER BY f.film_id";
+
+        List<Film> films = jdbcTemplate.query(sql, new FilmMapper());
+        log.trace("Returned {} films with genres from the database", films.size());
+        return films;
     }
 
     private void deleteGenres(int filmId) {
@@ -172,21 +166,6 @@ public class FilmDbStorage implements FilmStorage {
             log.trace("No information has been found for id {}", id);
             return false;
         }
-    }
-
-
-    @Override
-    public List<Film> getAllFilmsWithGenres() {
-        log.debug("getAllFilmsWithGenres()");
-        String sql = "SELECT f.film_id, f.name, f.description, f.release_date, f.duration, f.mpa_id, " +
-                "g.genre_id, g.genre_type FROM films AS f " +
-                "LEFT JOIN film_genre AS fg ON f.film_id = fg.film_id " +
-                "LEFT JOIN genre AS g ON fg.genre_id = g.genre_id " +
-                "ORDER BY f.film_id";
-
-        List<Film> films = jdbcTemplate.query(sql, new FilmMapper());
-        log.trace("Returned {} films with genres from the database", films.size());
-        return films;
     }
 
     @Override

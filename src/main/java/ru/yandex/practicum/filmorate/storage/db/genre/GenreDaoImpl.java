@@ -49,6 +49,17 @@ public class GenreDaoImpl implements GenreDao {
     }
 
     @Override
+    public List<Integer> getAllGenreIds() {
+        log.debug("getAllGenreIds()");
+        List<Integer> genreIds = jdbcTemplate.query(
+                "SELECT DISTINCT genre_id FROM genre ORDER BY genre_id",
+                (rs, rowNum) -> rs.getInt("genre_id")
+        );
+        log.trace("All genre IDs: {}", genreIds);
+        return genreIds;
+    }
+
+    @Override
     public boolean isContains(Integer id) {
         log.debug("isContains({})", id);
         try {

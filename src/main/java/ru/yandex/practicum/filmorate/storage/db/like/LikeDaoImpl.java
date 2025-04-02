@@ -68,4 +68,8 @@ public class LikeDaoImpl implements LikeDao {
                 "LIMIT ?";
         return jdbcTemplate.query(sql, new FilmMapper(), count);
     }
+
+    @Override
+    public void removeLike(Integer filmId, Integer userId) {
+    }
 }

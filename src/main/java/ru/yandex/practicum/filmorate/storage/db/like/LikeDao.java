@@ -14,4 +14,6 @@ public interface LikeDao {
     boolean isLiked(int filmId, int userId);
 
     List<Film> getTopFilms(int count);
+
+    void removeLike(Integer filmId, Integer userId);
 }

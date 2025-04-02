@@ -34,4 +34,8 @@ public class Film {
     private Mpa mpa;
 
     private int likesCount;
+
+    public void setGenre(Genre genre) {
+
+    }
 }

@@ -10,4 +10,6 @@ public interface GenreDao {
     List<Genre> getGenres();
 
     boolean isContains(Integer id);
+
+    List<Integer> getAllGenreIds();
 }

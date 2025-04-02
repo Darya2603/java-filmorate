@@ -6,6 +6,7 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import ru.yandex.practicum.filmorate.exception.NotFoundException;
 import ru.yandex.practicum.filmorate.model.Film;
+import ru.yandex.practicum.filmorate.model.Genre;
 import ru.yandex.practicum.filmorate.storage.db.film.FilmDbStorage;
 import ru.yandex.practicum.filmorate.storage.db.film.FilmStorage;
 import ru.yandex.practicum.filmorate.storage.db.genre.GenreDao;
@@ -40,7 +41,30 @@ public class FilmService {
     }
 
     public Film addFilm(Film film) {
-        return filmStorage.addFilm(film);
+        log.debug("createFilm({})", film);
+
+        int mpaId = film.getMpa().getId();
+        if (!mpaDao.isContains(mpaId)) {
+            log.warn("MPA with ID {} wasn't found", mpaId);
+            throw new NotFoundException("MPA with ID " + mpaId + " wasn't found");
+        }
+
+        log.debug("MPA ID is valid: {}", mpaId);
+
+        if (film.getGenres() != null && !film.getGenres().isEmpty()) {
+            List<Integer> existingGenreIds = genreDao.getAllGenreIds();
+
+            for (Genre genre : film.getGenres()) {
+                if (!existingGenreIds.contains(genre.getId())) {
+                    log.warn("Genre with ID {} wasn't found", genre.getId());
+                    throw new NotFoundException("Genre with ID " + genre.getId() + " wasn't found");
+                }
+            }
+        }
+
+        Film addedFilm = filmStorage.addFilm(film);
+        log.trace("The movie {} was added to the database", addedFilm);
+        return addedFilm;
     }
 
     public void deleteFilm(int filmId) {
@@ -104,9 +128,7 @@ public class FilmService {
             throw new NotFoundException("Пользователь с ID " + userId + " не найден");
         }
 
-        log.info("Текущие лайки для фильма {}: {}", filmId, film.getLikes());
-
-        if (likeDao.isLiked(filmId, userId)) {
+        log.info("Текущие лайки для фильма {}: {}", filmId, film.getLikes());        if (likeDao.isLiked(filmId, userId)) {
             likeDao.dislike(filmId, userId);
             log.info("Пользователь с ID {} убрал лайк к фильму с ID {}", userId, filmId);
         } else {
