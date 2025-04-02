@@ -124,7 +124,9 @@ public class FilmDbStorage implements FilmStorage {
         log.debug("updateGenres({}, {})", filmId, genres);
         deleteGenres(filmId);
         addGenres(filmId, genres);
-    }    @Override
+    }
+
+    @Override
     public Set<Genre> getGenres(int filmId) {
         log.debug("getGenres({})", filmId);
         Set<Genre> genres = new HashSet<>(jdbcTemplate.query(
